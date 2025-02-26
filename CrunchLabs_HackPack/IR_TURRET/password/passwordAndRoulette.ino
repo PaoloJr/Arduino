@@ -136,7 +136,7 @@ void handleCommand(int command) {
                 // Handle up command
                 upMove(1);
             } else {
-                //shakeHeadNo();
+                // shakeHeadNo();
             }
             break;
 
@@ -145,7 +145,7 @@ void handleCommand(int command) {
                 // Handle down command
                 downMove(1);
             } else {
-                //shakeHeadNo();
+                // shakeHeadNo();
             }
             break;
 
@@ -173,7 +173,7 @@ void handleCommand(int command) {
                 fire();
                 Serial.println("FIRE");
             } else {
-                //shakeHeadNo();
+                shakeHeadNo();
             }
             break;
 
@@ -186,6 +186,13 @@ void handleCommand(int command) {
                 //shakeHeadNo();
             }
             break;
+
+        case hash:
+          if (!passcodeEntered) {
+              shakeHeadNo()
+          } else {
+            randomRoulette()
+          }
 
         case cmd1: // Add digit 1 to passcode
             if (!passcodeEntered) {
@@ -246,7 +253,7 @@ void handleCommand(int command) {
                 addPasscodeDigit('0');
             }
             break;
-
+        
         default:
             // Unknown command, do nothing
             Serial.println("Command Read Failed or Unknown, Try Again");
@@ -366,5 +373,56 @@ void fireAll() { //function to fire all 6 darts at once
     delay(rollPrecision * 6); //time for 360 degrees of rotation
     rollServo.write(rollStopSpeed);//stop rotating the servo
     delay(5); // delay for smoothness
-}    
+}
+
+
+/*
+** this function acts as a form of Roulette, in which a spinning turret stops periodically
+** rolls a (simulated) 6 sided die each time it stops in order to decide whether it should fire or not.
+*/
+void randomRoulette() {
+  Serial.println("ENTERING ROULETTE MODE");
+  //unsigned long startTime = millis();
+  dartsFired = 0;
+  while(dartsFired < 6){ //while we still have darts, stay within this while loop
+    if (dartsFired < 6){ // if we still have darts do stuff (this is redundancy to help break out of the while loop in case something weird happens)
+      pitchServoVal = 110;
+      pitchServo.write(pitchServoVal); // set PITCH servo to flat angle
+      yawServo.write(145); // set YAW to rotate slowly
+      delay(500); // rotating for a moment
+      yawServo.write(90); // stop
+      delay(500 * random(1,4)); //wait for a random delay each time
+
+      if(random(3) == 0){ // you have a 1 in six chance of being hit
+        delay(500); 
+        if(random(2) == 0){ // 50% chance to either shake the head yes before firing or just fire
+          shakeHeadYes();
+          delay(150);
+          fire(1); // fire 1 dart
+          delay(100);
+        // }else if(random(6) == 0){
+        //   shakeHeadYes();
+        //   delay(50);
+        //   fireAll(); // fire all the darts
+        //   delay(50);
+        } else {
+          fire(1); // fire 1 dart
+          delay(50);
+        }
+      }else{
+        if(random(6) == 5){
+          delay(500);
+          shakeHeadNo();
+          delay(300);
+        } else{
+          delay(500);
+        }
+      }
+    } else{
+      yawServo.write(90); // redundancy to stop the spinning and break out of the while loop
+      return;
+    }
+  }
+  yawServo.write(90); // finally, stop the yaw movement
+}
   
